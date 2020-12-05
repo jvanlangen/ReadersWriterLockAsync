@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <Authors>J. van Langen</Authors>
+    <Description>ReadersWriterLockAsync solves the problem for using multiple readers and a single writer lock using async code.</Description>
+    <Copyright></Copyright>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl></PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jvanlangen/ReadersWriterLockAsync</RepositoryUrl>
+    <PackageTags>ReadersWriterLock, Async</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <RootNamespace>VanLangen.Locking</RootNamespace>
+    <AssemblyName>VanLangen.Locking.ReadersWriterLockAsync</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
