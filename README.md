@@ -74,7 +74,7 @@ Here no await is used and the method completes directly. No await is needed, whi
 
 **Some readers and writers**
 
-Let's add two readers and then two writers. The expected behavior shoudl be:
+Let's add two readers and then two writers. The expected behavior should be:
 1) reader A and B should run parallel
 2) writer C
 3) writer D
