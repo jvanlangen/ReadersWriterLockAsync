@@ -47,13 +47,13 @@ namespace VanLangen.Locking
         {
             TaskCompletionSource<object> tcs = default;
 
-            // lets check if any lock is held (this lock may be run parallel)
+            // lets check if any lock is held (this lock may run parallel)
             // if, for example, this is a writerlock and there is already a readerlock active,
-            // this will be queued.
+            // this asyncAction will be queued.
             lock (_readersWritersQueue)
             {
-                // If there is a write active | if there are readers active and the requested is a writer |
-                // anything is in the queue
+                // If there is a write active || if there are readers active and the requested is a writer ||
+                // anything is in the queue => Queue it
                 //
                 // Which means:
                 // - Queue readers when a writer is active or when anything is queued.
@@ -62,7 +62,7 @@ namespace VanLangen.Locking
                 //
                 if ((isWriterLock && (_activeReaders > 0)) || _writerActive || _readersWritersQueue.Count > 0)
                 {
-                    // queue it and await it some below until it is triggered by the current held lock routine
+                    // queue it and await it some below until it is triggered by a current held lock routine
                     tcs = new TaskCompletionSource<object>();
                     // add to the queue
                     _readersWritersQueue.Add(new ExecuteInfo(isWriterLock, tcs));
@@ -81,7 +81,7 @@ namespace VanLangen.Locking
             // execute the function
             var result = asyncAction();
 
-            // if it isn't completed (by using awaits) await it here.
+            // if it isn't completed (by using async code) await it here.
             if (!result.IsCompleted)
                 await result;
 
@@ -104,7 +104,7 @@ namespace VanLangen.Locking
                     if (item.IsWriterLock)
                     {
                         // if there are active readers, we're not allowed to run (yet) because all readers
-                        // must be finished
+                        // must be finished. Stop checking the queue
                         if (_activeReaders > 0)
                             break;
 
@@ -113,10 +113,12 @@ namespace VanLangen.Locking
                         _readersWritersQueue.RemoveAt(0);
                         _writerActive = true;
                         item.TCS.SetResult(null);
+                        // only one writer can be active, so stop checking the queue
                         break;
                     }
                     // item is a readerlock, the reader is allowed to run, inc active readers and continue
-                    // the waiting readerlock task
+                    // the waiting readerlock task. We can assume there is not writer active, 
+                    // because a reader or writer cannot finish when another writer is active.
                     _readersWritersQueue.RemoveAt(0);
                     _activeReaders++;
                     item.TCS.SetResult(null);
