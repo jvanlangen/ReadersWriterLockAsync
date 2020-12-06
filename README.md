@@ -71,7 +71,7 @@ Output:
       46,666 ms | result.IsCompleted == true
 ```
 
-Here no await is used and the method completes directly. No await is needed, which speeds-up the system.
+Await isn't used in the UseReaderAsync argument action, so the method completes directly. The execution is some faster when await isn't called.
 
 ## Some readers and writers
 
