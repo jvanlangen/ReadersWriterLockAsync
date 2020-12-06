@@ -29,12 +29,14 @@ else
     Write("result.IsCompleted == true");
 ```
 
-       7,013 ms | Before calling UseReaderAsync
-      38,953 ms | Reader start
-      58,376 ms | After calling UseReaderAsync
-      58,500 ms | result.IsCompleted == false, awaiting
-   1.078,985 ms | Reader end
-   1.079,209 ms | awaiting ready
+      21,078 ms | Before calling UseReaderAsync
+      51,063 ms | Reader start
+      70,050 ms | After calling UseReaderAsync
+      70,193 ms | result.IsCompleted == false, awaiting
+   1.083,426 ms | Reader end
+   1.083,705 ms | awaiting ready
+   
+   
  
  
 **Non async example:**
