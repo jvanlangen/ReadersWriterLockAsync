@@ -29,12 +29,12 @@ else
     Write("result.IsCompleted == true");
 ```
 
-       6,142 ms | Before calling UseReaderAsync
-      34,053 ms | Reader 1 start
-      55,544 ms | After calling UseReaderAsync
-      55,690 ms | result.IsCompleted == false, awaiting
-   1.075,528 ms | Reader 1 end
-   1.075,793 ms | awaiting ready
+       7,013 ms | Before calling UseReaderAsync
+      38,953 ms | Reader start
+      58,376 ms | After calling UseReaderAsync
+      58,500 ms | result.IsCompleted == false, awaiting
+   1.078,985 ms | Reader end
+   1.079,209 ms | awaiting ready
  
  
 **Non async example:**
@@ -59,8 +59,8 @@ else
     Write("result.IsCompleted == true");
 ```
 
-      6,143 ms | Before calling UseReaderAsync
-     32,849 ms | Reader 1 start
-     33,026 ms | Reader 1 end
-     33,597 ms | After calling UseReaderAsync
-     33,674 ms | result.IsCompleted == true
+      19,983 ms | Before calling UseReaderAsync
+      46,000 ms | Reader start
+      46,100 ms | Reader end
+      46,625 ms | After calling UseReaderAsync
+      46,666 ms | result.IsCompleted == true
