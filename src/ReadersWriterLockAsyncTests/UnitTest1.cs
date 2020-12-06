@@ -12,23 +12,23 @@ namespace ReadersWriterLockAsyncTests
         [Fact]
         public async void ExecuteSync()
         {
-            var rwl = new ReadersWriterLockAsync();
+            var rwl = new AsyncReadersWriterLock();
 
             var results = new List<int>();
             
-            var reader1 = rwl.ExecuteInReaderLock(() =>
+            var reader1 = rwl.InReaderLockAsync(() =>
             {
                 results.Add(1);
                 return new ValueTask();
             });
 
-            var writer2 = rwl.ExecuteInWriterLock(() =>
+            var writer2 = rwl.InWriterLockAsync(() =>
             {
                 results.Add(2);
                 return new ValueTask();
             });
 
-            var reader3 = rwl.ExecuteInReaderLock(() =>
+            var reader3 = rwl.InReaderLockAsync(() =>
             {
                 results.Add(3);
                 return new ValueTask();
@@ -42,11 +42,11 @@ namespace ReadersWriterLockAsyncTests
         [Fact]
         public async void ExecuteAsync()
         {
-            var rwl = new ReadersWriterLockAsync();
+            var rwl = new AsyncReadersWriterLock();
 
             var results = new List<int>();
 
-            var reader1 = rwl.ExecuteInReaderLock(async () =>
+            var reader1 = rwl.InReaderLockAsync(async () =>
             {
                 await Task.Delay(10);
                 results.Add(1);
@@ -55,7 +55,7 @@ namespace ReadersWriterLockAsyncTests
             if (!reader1.IsCompleted)
                 await reader1;
 
-            var writer2 = rwl.ExecuteInWriterLock(async () =>
+            var writer2 = rwl.InWriterLockAsync(async () =>
             {
                 await Task.Delay(10);
                 results.Add(2);
@@ -64,7 +64,7 @@ namespace ReadersWriterLockAsyncTests
             if (!writer2.IsCompleted)
                 await writer2;
 
-            var reader3 = rwl.ExecuteInReaderLock(async () =>
+            var reader3 = rwl.InReaderLockAsync(async () =>
             {
                 await Task.Delay(10);
                 results.Add(3);
