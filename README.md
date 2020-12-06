@@ -7,7 +7,7 @@ ReadersWriterLockAsync solves the problem for using multiple readers and a singl
 
 *The Write function adds some stopwatch time to the output*
 
-**Async example:**
+## Async example:
 
 ```csharp
 Write("Before calling UseReaderAsync");
@@ -40,7 +40,7 @@ Output:
    
 As you can see the "Reader start" is executed directly. Because of the await, the result.IsComplete is not set. We're able to await the result.
  
-**Non async example:**
+## Non async example:
 
 ```csharp
 Write("Before calling UseReaderAsync");
@@ -72,7 +72,7 @@ Output:
 
 Here no await is used and the method completes directly. No await is needed, which speeds-up the system.
 
-**Some readers and writers**
+## Some readers and writers
 
 Let's add two readers and then two writers. The expected behavior should be:
 1) reader A and B should run parallel
@@ -114,10 +114,8 @@ var allValueTasks = new[]
 };
 
 foreach (var valueTask in allValueTasks)
-{
     if (!valueTask.IsCompleted)
         await valueTask;
-}
 ```
 Output:
 ```
