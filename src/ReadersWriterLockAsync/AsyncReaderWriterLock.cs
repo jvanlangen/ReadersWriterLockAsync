@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace VanLangen.Locking
@@ -13,6 +14,7 @@ namespace VanLangen.Locking
         private readonly List<ExecuteInfo> _readersWritersQueue = new List<ExecuteInfo>();
         private int _activeReaders;
         private bool _writerActive;
+        private static readonly SynchronizationContext _defaultContext = new SynchronizationContext();
 
         /// <summary>
         /// Execute this code within a reader lock
@@ -76,8 +78,8 @@ namespace VanLangen.Locking
                 {
                     // queue it and await it some below until it is triggered by a current held lock routine
                     tcs = new TaskCompletionSource<object>();
-                    // add to the queue
-                    _readersWritersQueue.Add(new ExecuteInfo(isWriterLock, tcs));
+                    // add to the queue and preserve the synchronization context
+                    _readersWritersQueue.Add(new ExecuteInfo(isWriterLock, tcs, SynchronizationContext.Current ?? _defaultContext));
                 }
                 // we can execute directly, so take the lock (either reader/writer)
                 else if (isWriterLock)
@@ -107,16 +109,19 @@ namespace VanLangen.Locking
                     _activeReaders--;
 
                 // this lock is ready, now check the queue for waiting locks
-                while (_readersWritersQueue.Count > 0)
+                while (true)
                 {
                     // get the first item
-                    var item = _readersWritersQueue.First();
+                    var item = _readersWritersQueue.FirstOrDefault();
+
+                    if (item == default)
+                        break;
 
                     // is it a writerlock?
                     if (item.IsWriterLock)
                     {
                         // if there are active readers, we're not allowed to run (yet) because all readers
-                        // must be finished. Stop checking the queue
+                        // must be finished. Stop checking the queue.
                         if (_activeReaders > 0)
                             break;
 
@@ -124,7 +129,10 @@ namespace VanLangen.Locking
                         // and continue the waiting writerlock task
                         _readersWritersQueue.RemoveAt(0);
                         _writerActive = true;
-                        item.TCS.SetResult(null);
+
+                        // Post the SetResult on the preserved synchronization context
+                        item.Context.Post(s => item.TCS.SetResult(s), null);
+                        
                         // only one writer can be active, so stop checking the queue
                         break;
                     }
@@ -133,7 +141,9 @@ namespace VanLangen.Locking
                     // because a reader or writer cannot finish when another writer is active.
                     _readersWritersQueue.RemoveAt(0);
                     _activeReaders++;
-                    item.TCS.SetResult(null);
+
+                    // Post the SetResult on the preserved synchronization context
+                    item.Context.Post(s => item.TCS.SetResult(s), null);
                 }
             }
         }
