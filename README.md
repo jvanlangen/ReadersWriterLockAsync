@@ -75,9 +75,9 @@ Here no await is used and the method completes directly. No await is needed, whi
 **Some readers and writers**
 
 Let's add two readers and then two writers. The expected behavior shoudl be:
-1) reader 1 and 2 should run parallel
-2) writer 1
-3) writer 2
+1) reader A and B should run parallel
+2) writer C
+3) writer D
 
 ```csharp
 // Setup a list and add some readers and writers.
