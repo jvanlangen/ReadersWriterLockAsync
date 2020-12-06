@@ -74,10 +74,11 @@ Here no await is used and the method completes directly. No await is needed, whi
 
 ## Some readers and writers
 
-Let's add two readers and then two writers. The expected behavior should be:
+Let's add two readers and then two writers followed by a reader. The expected behavior should be:
 1) reader A and B should run parallel
 2) writer C
 3) writer D
+4) reader E
 
 ```csharp
 // Initialize an array with some readers and writers.
