@@ -28,14 +28,15 @@ if (!result.IsCompleted)
 else
     Write("result.IsCompleted == true");
 ```
-
+Output:
+```
       21,078 ms | Before calling UseReaderAsync
       51,063 ms | Reader start
       70,050 ms | After calling UseReaderAsync
       70,193 ms | result.IsCompleted == false, awaiting
    1.083,426 ms | Reader end
    1.083,705 ms | awaiting ready
-   
+```
    
  
  
@@ -60,9 +61,11 @@ if (!result.IsCompleted)
 else
     Write("result.IsCompleted == true");
 ```
-
+Output:
+```
       19,983 ms | Before calling UseReaderAsync
       46,000 ms | Reader start
       46,100 ms | Reader end
       46,625 ms | After calling UseReaderAsync
       46,666 ms | result.IsCompleted == true
+```
