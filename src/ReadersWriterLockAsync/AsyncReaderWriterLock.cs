@@ -17,32 +17,46 @@ namespace VanLangen.Locking
         private static readonly SynchronizationContext _defaultContext = new SynchronizationContext();
 
         /// <summary>
-        /// Execute this code within a reader lock
+        /// Execute the async code within a reader lock
         /// </summary>
         /// <param name="asyncAction"></param>
         /// <returns>Task which can be awaited</returns>
-        public ValueTask UseReaderAsync(Func<ValueTask> asyncAction) =>
+        public ValueTask<T> UseReaderAsync<T>(Func<ValueTask<T>> asyncAction) =>
             ExecuteWithinLockAsync(false, asyncAction);
 
         /// <summary>
-        /// Execute this code within a reader lock
+        /// Execute the code within a reader lock
         /// </summary>
         /// <param name="asyncAction"></param>
         /// <returns>Task which can be awaited</returns>
-        public ValueTask UseReaderAsync(Action asyncAction) =>
-            ExecuteWithinLockAsync(false, () =>
-            {
-                asyncAction();
-                return new ValueTask();
-            });
+        public ValueTask<T> UseReaderAsync<T>(Func<T> asyncAction) =>
+            ExecuteWithinLockAsync(false, () => ValueTask.FromResult<T>(asyncAction()));
 
 
         /// <summary>
-        /// Execute this code within a writer lock
+        /// Execute the code within a reader lock
+        /// </summary>
+        /// <param name="asyncAction"></param>
+        /// <returns>Task which can be awaited</returns>
+        public async ValueTask UseReaderAsync(Action asyncAction)
+        {
+            var result = ExecuteWithinLockAsync<object>(false, () =>
+             {
+                 asyncAction();
+                 return new ValueTask<object>();
+             });
+
+            if (!result.IsCompleted)
+                await result;
+        }
+
+
+        /// <summary>
+        /// Execute the async code within a writer lock
         /// </summary>
         /// <param name="asyncAction"></param>
         /// <returns></returns>
-        public ValueTask UseWriterAsync(Func<ValueTask> asyncAction) =>
+        public ValueTask<T> UseWriterAsync<T>(Func<ValueTask<T>> asyncAction) =>
             ExecuteWithinLockAsync(true, asyncAction);
 
         /// <summary>
@@ -50,14 +64,27 @@ namespace VanLangen.Locking
         /// </summary>
         /// <param name="asyncAction"></param>
         /// <returns></returns>
-        public ValueTask UseWriterAsync(Action asyncAction) =>
-            ExecuteWithinLockAsync(true, () =>
+        public ValueTask<T> UseWriterAsync<T>(Func<T> asyncAction) =>
+            ExecuteWithinLockAsync(true, () => ValueTask.FromResult<T>(asyncAction()));
+
+        /// <summary>
+        /// Execute this code within a writer lock
+        /// </summary>
+        /// <param name="asyncAction"></param>
+        /// <returns></returns>
+        public async ValueTask UseWriterAsync(Action asyncAction)
+        {
+            var result = ExecuteWithinLockAsync<object>(true, () =>
             {
                 asyncAction();
-                return new ValueTask();
+                return new ValueTask<object>();
             });
 
-        private async ValueTask ExecuteWithinLockAsync(bool isWriterLock, Func<ValueTask> asyncAction)
+            if (!result.IsCompleted)
+                await result;
+        }
+
+        private async ValueTask<T> ExecuteWithinLockAsync<T>(bool isWriterLock, Func<ValueTask<T>> asyncAction)
         {
             TaskCompletionSource<object> tcs = default;
 
@@ -100,6 +127,8 @@ namespace VanLangen.Locking
                 // if it isn't completed (by using async code) await it here.
                 if (!result.IsCompleted)
                     await result;
+
+                return result.Result;
             }
             finally
             {
