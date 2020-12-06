@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using VanLangen.Locking;
@@ -7,65 +8,118 @@ namespace ReadersWriterLockExample
 {
     class Program
     {
-        static Stopwatch _sw =  Stopwatch.StartNew();
+        static Stopwatch _sw = Stopwatch.StartNew();
         static void Write(string line) =>
-             Console.WriteLine($"{_sw.Elapsed.TotalMilliseconds,10:N3} ms | {line}");
+             Console.WriteLine($"{_sw.Elapsed.TotalMilliseconds,12:N3} ms | {line}");
 
 
 
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
-            var readersWriterLock = new AsyncReadersWriterLock();
+            await Example1();
+            //await Example2();
+        }
 
-            var writer = readersWriterLock.InWriterLockAsync(async () =>
+        // create the instance of the readersWriterLock
+        private static readonly AsyncReadersWriterLock _readersWriterLock = new AsyncReadersWriterLock();
+
+        private static async Task Example2()
+        {
+            Write("Before calling UseReaderAsync");
+            var result = _readersWriterLock.UseReaderAsync(async () =>
             {
-                Write("Writer start");
+                Write("Reader start");
                 await Task.Delay(1000);
-                Write("Writer end");
+                Write("Reader end");
             });
+            Write("After calling UseReaderAsync");
 
-            var reader1 = readersWriterLock.InReaderLockAsync(async () =>
+            if (!result.IsCompleted)
             {
-                Write("Reader 1 start");
-                await Task.Delay(1000);
-                Write("Reader 1 end");
-            });
+                Write("result.IsCompleted == false, awaiting");
+                await result;
+                Write("awaiting ready");
+            }
+            else
+                Write("result.IsCompleted == true");
 
-            var reader2 = readersWriterLock.InReaderLockAsync(async () =>
+
+            //var result = _readersWriterLock.UseReaderAsync(() =>
+            //{
+            //    Write("Reader 1 start");
+            //    Write("Reader 1 end");
+            //});
+
+
+            //var result2 = _readersWriterLock.UseReaderAsync(() =>
+            //{
+            //    Write("Reader 2 start/end");
+            //});
+
+            //var result3 = _readersWriterLock.UseWriterAsync(async () =>
+            //{
+            //    Write("Write 1 start");
+            //    await Task.Delay(1000);
+            //    Write("Writer 1 end");
+            //});
+
+            // if it could be locked, it will execute directly. (in this example async code is used, so it will
+            // be awaited.
+
+
+            //if (!result2.IsCompleted)
+            //    await result2;
+
+            //if (!result3.IsCompleted)
+            //    await result3;
+        }
+
+        private static async Task Example1()
+        {
+            // Initialize an array with some readers and writers.
+            var allValueTasks = new[]
             {
-                Write("Reader 2 start");
-                await Task.Delay(1000);
-                Write("Reader 2 end");
-            });
+                // the first reader will run directly
+                _readersWriterLock.UseReaderAsync(async () =>
+                {
+                    Write("Reader A start");
+                    await Task.Delay(1000);
+                    Write("Reader A end");
+                }),
+                // the second reader will also run directly
+                _readersWriterLock.UseReaderAsync(async () =>
+                {
+                    Write("Reader B start");
+                    await Task.Delay(1000);
+                    Write("Reader B end");
+                }),
+                // because of two readers, this writer has to be queued
+                _readersWriterLock.UseWriterAsync(async () =>
+                {
+                    Write("Writer C start");
+                    await Task.Delay(1000);
+                    Write("Writer C end");
+                }),
+                // because of two readers and a writer queued, this writer has to be queued also
+                _readersWriterLock.UseWriterAsync(async () =>
+                {
+                    Write("Writer D start");
+                    await Task.Delay(1000);
+                    Write("Writer D end");
+                }),
+                // Lets add another reader, because some writers are queued, this reader is queued also
+                _readersWriterLock.UseReaderAsync(async () =>
+                {
+                    Write("Reader E start");
+                    await Task.Delay(1000);
+                    Write("Reader E end");
+                }),
+            };
 
-            var writer2 = readersWriterLock.InWriterLockAsync(async () =>
-            {
-                Write("Writer 2 start");
-                await Task.Delay(1000);
-                Write("Writer 2 end");
-            });
-
-            var reader3 = readersWriterLock.InReaderLockAsync(async () =>
-            {
-                Write("Reader 3 start");
-                await Task.Delay(1000);
-                Write("Reader 3 end");
-            });
-
-            // wait until it is completed
-            if(!reader3.IsCompleted)
-                await reader3;
-
-            var reader4 = readersWriterLock.InReaderLockAsync(async () =>
-            {
-                Write("reader 4 start");
-                await Task.Delay(1000);
-                Write("reader 4 end");
-            });
-
-            await Task.Delay(10000);
+            foreach (var valueTask in allValueTasks)
+                if (!valueTask.IsCompleted)
+                    await valueTask;
         }
     }
 }

@@ -16,19 +16,19 @@ namespace ReadersWriterLockAsyncTests
 
             var results = new List<int>();
             
-            var reader1 = rwl.InReaderLockAsync(() =>
+            var reader1 = rwl.UseReaderAsync(() =>
             {
                 results.Add(1);
                 return new ValueTask();
             });
 
-            var writer2 = rwl.InWriterLockAsync(() =>
+            var writer2 = rwl.UseWriterAsync(() =>
             {
                 results.Add(2);
                 return new ValueTask();
             });
 
-            var reader3 = rwl.InReaderLockAsync(() =>
+            var reader3 = rwl.UseReaderAsync(() =>
             {
                 results.Add(3);
                 return new ValueTask();
@@ -46,7 +46,7 @@ namespace ReadersWriterLockAsyncTests
 
             var results = new List<int>();
 
-            var reader1 = rwl.InReaderLockAsync(async () =>
+            var reader1 = rwl.UseReaderAsync(async () =>
             {
                 await Task.Delay(10);
                 results.Add(1);
@@ -55,7 +55,7 @@ namespace ReadersWriterLockAsyncTests
             if (!reader1.IsCompleted)
                 await reader1;
 
-            var writer2 = rwl.InWriterLockAsync(async () =>
+            var writer2 = rwl.UseWriterAsync(async () =>
             {
                 await Task.Delay(10);
                 results.Add(2);
@@ -64,7 +64,7 @@ namespace ReadersWriterLockAsyncTests
             if (!writer2.IsCompleted)
                 await writer2;
 
-            var reader3 = rwl.InReaderLockAsync(async () =>
+            var reader3 = rwl.UseReaderAsync(async () =>
             {
                 await Task.Delay(10);
                 results.Add(3);

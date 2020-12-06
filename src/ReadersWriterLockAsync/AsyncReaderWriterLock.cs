@@ -5,23 +5,8 @@ using System.Threading.Tasks;
 
 namespace VanLangen.Locking
 {
-    public class AsyncReadersWriterLock
+    public sealed class AsyncReadersWriterLock
     {
-        /// <summary>
-        /// Struct to tie the lock type and the TaskCompletionSource, to trigger the awaited lock task
-        /// </summary>
-        private struct ExecuteInfo
-        {
-            public readonly bool IsWriterLock;
-            public readonly TaskCompletionSource<object> TCS;
-
-            public ExecuteInfo(bool isWriterLock, TaskCompletionSource<object> tcs)
-            {
-                IsWriterLock = isWriterLock;
-                TCS = tcs;
-            }
-        }
-
         private readonly List<ExecuteInfo> _readersWritersQueue = new List<ExecuteInfo>();
         private int _activeReaders;
         private bool _writerActive;
@@ -31,17 +16,41 @@ namespace VanLangen.Locking
         /// </summary>
         /// <param name="asyncAction"></param>
         /// <returns>Task which can be awaited</returns>
-        public ValueTask InReaderLockAsync(Func<ValueTask> asyncAction) =>
+        public ValueTask UseReaderAsync(Func<ValueTask> asyncAction) =>
             ExecuteWithinLockAsync(false, asyncAction);
+
+        /// <summary>
+        /// Execute this code within a reader lock
+        /// </summary>
+        /// <param name="asyncAction"></param>
+        /// <returns>Task which can be awaited</returns>
+        public ValueTask UseReaderAsync(Action asyncAction) =>
+            ExecuteWithinLockAsync(false, () =>
+            {
+                asyncAction();
+                return new ValueTask();
+            });
+
 
         /// <summary>
         /// Execute this code within a writer lock
         /// </summary>
         /// <param name="asyncAction"></param>
         /// <returns></returns>
-        public ValueTask InWriterLockAsync(Func<ValueTask> asyncAction) =>
+        public ValueTask UseWriterAsync(Func<ValueTask> asyncAction) =>
             ExecuteWithinLockAsync(true, asyncAction);
 
+        /// <summary>
+        /// Execute this code within a writer lock
+        /// </summary>
+        /// <param name="asyncAction"></param>
+        /// <returns></returns>
+        public ValueTask UseWriterAsync(Action asyncAction) =>
+            ExecuteWithinLockAsync(true, () =>
+            {
+                asyncAction();
+                return new ValueTask();
+            });
 
         private async ValueTask ExecuteWithinLockAsync(bool isWriterLock, Func<ValueTask> asyncAction)
         {

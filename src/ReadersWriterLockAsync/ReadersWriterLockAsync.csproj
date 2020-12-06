@@ -3,15 +3,19 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <Authors>J. van Langen</Authors>
-    <Description>ReadersWriterLockAsync solves the problem for using multiple readers and a single writer lock using async code.</Description>
+    <Description>ReadersWriterLockAsync solves the thread affinity problem for using multiple readers and a single writer lock using async code.</Description>
     <Copyright></Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/jvanlangen/ReadersWriterLockAsync</RepositoryUrl>
-    <PackageTags>ReadersWriterLock, Async</PackageTags>
+    <PackageTags>ReadersWriterLock;Async;ReaderWriter;ReadersWriter;Locking;lock</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RootNamespace>VanLangen.Locking</RootNamespace>
     <AssemblyName>VanLangen.Locking.ReadersWriterLockAsync</AssemblyName>
+    <Company>vanlangen.biz</Company>
+    <FileVersion>1.0.1.0</FileVersion>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <Version>1.0.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
