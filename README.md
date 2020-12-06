@@ -38,7 +38,7 @@ Output:
    1.083,705 ms | awaiting ready
 ```
    
- 
+As you can see the "Reader start" is executed directly. Because of the await, the result.IsComplete is not set. We're able to await the result.
  
 **Non async example:**
 
@@ -69,3 +69,5 @@ Output:
       46,625 ms | After calling UseReaderAsync
       46,666 ms | result.IsCompleted == true
 ```
+
+Here no await is used and the method completes directly. No await is needed, which speeds-up the system.
