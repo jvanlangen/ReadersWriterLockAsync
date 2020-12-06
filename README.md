@@ -75,9 +75,9 @@ Here no await is used and the method completes directly. No await is needed, whi
 **Some readers and writers**
 
 Let's add two readers and then two writers. The expected behavior shoudl be:
-- two readers parallel
-- writer
-- writer
+1) reader 1 and 2 should run parallel
+2) writer 1
+3) writer 2
 
 ```csharp
            // Setup a list and add some readers and writers.
@@ -118,4 +118,15 @@ Let's add two readers and then two writers. The expected behavior shoudl be:
                 if (!valueTask.IsCompleted)
                     await valueTask;
             }
+```
+Output:
+```
+      16,384 ms | Reader 1 start
+      47,590 ms | Reader 2 start
+   1.068,806 ms | Reader 2 end
+   1.069,078 ms | Reader 1 end
+   1.073,535 ms | Writer 1 start
+   2.082,564 ms | Writer 1 end
+   2.083,249 ms | Writer 2 start
+   3.097,885 ms | Writer 2 end
 ```
