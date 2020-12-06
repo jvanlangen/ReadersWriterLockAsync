@@ -71,3 +71,51 @@ Output:
 ```
 
 Here no await is used and the method completes directly. No await is needed, which speeds-up the system.
+
+**Some readers and writers**
+
+Let's add two readers and then two writers. The expected behavior shoudl be:
+- two readers parallel
+- writer
+- writer
+
+```csharp
+           // Setup a list and add some readers and writers.
+            var allValueTasks = new List<ValueTask>
+            {
+                // the first reader will run directly
+                _readersWriterLock.UseReaderAsync(async () =>
+                {
+                    Write("Reader 1 start");
+                    await Task.Delay(1000);
+                    Write("Reader 1 end");
+                }),
+                // the second reader will also run directly
+                _readersWriterLock.UseReaderAsync(async () =>
+                {
+                    Write("Reader 2 start");
+                    await Task.Delay(1000);
+                    Write("Reader 2 end");
+                }),
+                // because of two readers, this writer has to be queued
+                _readersWriterLock.UseWriterAsync(async () =>
+                {
+                    Write("Writer 1 start");
+                    await Task.Delay(1000);
+                    Write("Writer 1 end");
+                }),
+                // because of two readers and a writer queued, this writer has to be queued also
+                _readersWriterLock.UseWriterAsync(async () =>
+                {
+                    Write("Writer 2 start");
+                    await Task.Delay(1000);
+                    Write("Writer 2 end");
+                })
+            };
+
+            foreach (var valueTask in allValueTasks)
+            {
+                if (!valueTask.IsCompleted)
+                    await valueTask;
+            }
+```
