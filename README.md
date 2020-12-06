@@ -1,7 +1,8 @@
 # ReadersWriterLockAsync
-ReadersWriterLockAsync solves the thread affinity problem for using multiple readers and a single writer lock using async code.
+ReadersWriterLockAsync solves the thread affinity problem for using multiple readers and a single writer lock using async code. It supports SynchronizationContexts. (usefull when developing UI applications)
 
-**This version is not released yet i'm still working on some tests**
+
+**I'm still working on some tests**  (for thoughts, send them)
 
 # Examples:
 
