@@ -122,7 +122,6 @@ var allValueTasks = new[]
 };
 
 foreach (var valueTask in allValueTasks)
-{
     if (!valueTask.IsCompleted)
         await valueTask;
 }
