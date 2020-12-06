@@ -10,33 +10,57 @@ ReadersWriterLockAsync solves the problem for using multiple readers and a singl
 **Async example:**
 
 ```csharp
-// Execute code within the reader lock
+Write("Before calling UseReaderAsync");
 var result = _readersWriterLock.UseReaderAsync(async () =>
 {
     Write("Reader 1 start");
     await Task.Delay(1000);
     Write("Reader 1 end");
 });
+Write("After calling UseReaderAsync");
 
-// if it could be locked, it will execute directly. (in this example async code is used, so it will
-// be awaited)
 if (!result.IsCompleted)
+{
+    Write("result.IsCompleted == false, awaiting");
     await result;
+    Write("awaiting ready");
+}
+else
+    Write("result.IsCompleted == true");
 ```
 
+     7,322 ms | Before calling UseReaderAsync
+    37,674 ms | Reader 1 start
+    57,574 ms | After calling UseReaderAsync
+    57,749 ms | result.IsCompleted == false, awaiting
+ 1.059,595 ms | Reader 1 end
+ 1.059,792 ms | awaiting ready
+ 
+ 
 **Non async example:**
 
 ```csharp
-// Execute code within the reader lock
-var result = _readersWriterLock.UseReaderAsync(async () =>
+Write("Before calling UseReaderAsync");
+var result = _readersWriterLock.UseReaderAsync(() =>
 {
     Write("Reader 1 start");
-    // some other non async code
+    // await Task.Delay(1000);
     Write("Reader 1 end");
 });
+Write("After calling UseReaderAsync");
 
-// if it could be locked, it will execute directly. (in this example no async code is used, so it will
-// be completed directly)
 if (!result.IsCompleted)
+{
+    Write("result.IsCompleted == false, awaiting");
     await result;
+    Write("awaiting ready");
+}
+else
+    Write("result.IsCompleted == true");
 ```
+
+     6,143 ms | Before calling UseReaderAsync
+    32,849 ms | Reader 1 start
+    33,026 ms | Reader 1 end
+    33,597 ms | After calling UseReaderAsync
+    33,674 ms | result.IsCompleted == true
