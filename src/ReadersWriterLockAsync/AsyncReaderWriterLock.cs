@@ -1,4 +1,7 @@
-﻿using System;
+﻿// VanLangen.biz licenses this file to you under the MIT license.
+// Source: https://github.com/jvanlangen/ReadersWriterLockAsync
+// Nuget: https://www.nuget.org/packages/VanLangen.Locking.ReadersWriterLockAsync/
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
