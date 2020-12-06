@@ -80,51 +80,62 @@ Let's add two readers and then two writers. The expected behavior should be:
 3) writer D
 
 ```csharp
-// Initialize an array with some readers and writers.
-var allValueTasks = new[]
-{
-    // the first reader will run directly
-    _readersWriterLock.UseReaderAsync(async () =>
-    {
-        Write("Reader A start");
-        await Task.Delay(1000);
-        Write("Reader A end");
-    }),
-    // the second reader will also run directly
-    _readersWriterLock.UseReaderAsync(async () =>
-    {
-        Write("Reader B start");
-        await Task.Delay(1000);
-        Write("Reader B end");
-    }),
-    // because of two readers, this writer has to be queued
-    _readersWriterLock.UseWriterAsync(async () =>
-    {
-        Write("Writer C start");
-        await Task.Delay(1000);
-        Write("Writer C end");
-    }),
-    // because of two readers and a writer queued, this writer has to be queued also
-    _readersWriterLock.UseWriterAsync(async () =>
-    {
-        Write("Writer D start");
-        await Task.Delay(1000);
-        Write("Writer D end");
-    })
-};
+            // Initialize an array with some readers and writers.
+            var allValueTasks = new[]
+            {
+                // the first reader will run directly
+                _readersWriterLock.UseReaderAsync(async () =>
+                {
+                    Write("Reader A start");
+                    await Task.Delay(1000);
+                    Write("Reader A end");
+                }),
+                // the second reader will also run directly
+                _readersWriterLock.UseReaderAsync(async () =>
+                {
+                    Write("Reader B start");
+                    await Task.Delay(1000);
+                    Write("Reader B end");
+                }),
+                // because of two readers, this writer has to be queued
+                _readersWriterLock.UseWriterAsync(async () =>
+                {
+                    Write("Writer C start");
+                    await Task.Delay(1000);
+                    Write("Writer C end");
+                }),
+                // because of two readers and a writer queued, this writer has to be queued also
+                _readersWriterLock.UseWriterAsync(async () =>
+                {
+                    Write("Writer D start");
+                    await Task.Delay(1000);
+                    Write("Writer D end");
+                }),
+                // Lets add another reader, because some writers are queued, this reader is queued also
+                _readersWriterLock.UseReaderAsync(async () =>
+                {
+                    Write("Reader E start");
+                    await Task.Delay(1000);
+                    Write("Reader E end");
+                }),
+            };
 
-foreach (var valueTask in allValueTasks)
-    if (!valueTask.IsCompleted)
-        await valueTask;
+            foreach (var valueTask in allValueTasks)
+            {
+                if (!valueTask.IsCompleted)
+                    await valueTask;
+            }
 ```
 Output:
 ```
-      18,585 ms | Reader A start
-      51,867 ms | Reader B start
-   1.071,018 ms | Reader B end
-   1.071,132 ms | Reader A end
-   1.075,131 ms | Writer C start
-   2.085,306 ms | Writer C end
-   2.086,111 ms | Writer D start
-   3.090,610 ms | Writer D end
+      23,056 ms | Reader A start
+      53,059 ms | Reader B start
+   1.073,641 ms | Reader B end
+   1.073,820 ms | Reader A end
+   1.078,123 ms | Writer C start
+   2.086,785 ms | Writer C end
+   2.087,468 ms | Writer D start
+   3.096,612 ms | Writer D end
+   3.097,310 ms | Reader E start
+   4.102,154 ms | Reader E end
 ```
