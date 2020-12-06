@@ -8,7 +8,7 @@ namespace VanLangen.Locking
     public class AsyncReadersWriterLock
     {
         /// <summary>
-        /// Struct to tight the lock type and the TaskCompletionSource, to trigger the awaited lock task
+        /// Struct to tie the lock type and the TaskCompletionSource, to trigger the awaited lock task
         /// </summary>
         private struct ExecuteInfo
         {
