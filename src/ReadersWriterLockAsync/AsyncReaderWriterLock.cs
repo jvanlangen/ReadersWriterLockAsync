@@ -92,58 +92,63 @@ namespace VanLangen.Locking
             if (tcs != default)
                 await tcs.Task;
 
-            // execute the function
-            var result = asyncAction();
-
-            // if it isn't completed (by using async code) await it here.
-            if (!result.IsCompleted)
-                await result;
-
-            // lock the queue again and check if any locks need to be triggered.
-            lock (_readersWritersQueue)
+            try
             {
-                // we first need to disable this lock, because we were ready with the operation.
-                if (isWriterLock)
-                    _writerActive = false;
-                else
-                    _activeReaders--;
+                // execute the function
+                var result = asyncAction();
 
-                // this lock is ready, now check the queue for waiting locks
-                while (true)
+                // if it isn't completed (by using async code) await it here.
+                if (!result.IsCompleted)
+                    await result;
+            }
+            finally
+            {
+                // lock the queue again and check if any locks need to be triggered.
+                lock (_readersWritersQueue)
                 {
-                    // get the first item
-                    var item = _readersWritersQueue.FirstOrDefault();
+                    // we first need to disable this lock, because we were ready with the operation.
+                    if (isWriterLock)
+                        _writerActive = false;
+                    else
+                        _activeReaders--;
 
-                    if (item == default)
-                        break;
-
-                    // is it a writerlock?
-                    if (item.IsWriterLock)
+                    // this lock is ready, now check the queue for waiting locks
+                    while (true)
                     {
-                        // if there are active readers, we're not allowed to run (yet) because all readers
-                        // must be finished. Stop checking the queue.
-                        if (_activeReaders > 0)
+                        // get the first item
+                        var item = _readersWritersQueue.FirstOrDefault();
+
+                        if (item == default)
                             break;
 
-                        // we're allowed to run this writerlock, so remove from queue. Take the writerlock
-                        // and continue the waiting writerlock task
+                        // is it a writerlock?
+                        if (item.IsWriterLock)
+                        {
+                            // if there are active readers, we're not allowed to run (yet) because all readers
+                            // must be finished. Stop checking the queue.
+                            if (_activeReaders > 0)
+                                break;
+
+                            // we're allowed to run this writerlock, so remove from queue. Take the writerlock
+                            // and continue the waiting writerlock task
+                            _readersWritersQueue.RemoveAt(0);
+                            _writerActive = true;
+
+                            // Post the SetResult on the preserved synchronization context
+                            item.Context.Post(s => item.TCS.SetResult(s), null);
+
+                            // only one writer can be active, so stop checking the queue
+                            break;
+                        }
+                        // item is a readerlock, the reader is allowed to run, inc active readers and continue
+                        // the waiting readerlock task. We can assume there is not writer active, 
+                        // because a reader or writer cannot finish when another writer is active.
                         _readersWritersQueue.RemoveAt(0);
-                        _writerActive = true;
+                        _activeReaders++;
 
                         // Post the SetResult on the preserved synchronization context
                         item.Context.Post(s => item.TCS.SetResult(s), null);
-                        
-                        // only one writer can be active, so stop checking the queue
-                        break;
                     }
-                    // item is a readerlock, the reader is allowed to run, inc active readers and continue
-                    // the waiting readerlock task. We can assume there is not writer active, 
-                    // because a reader or writer cannot finish when another writer is active.
-                    _readersWritersQueue.RemoveAt(0);
-                    _activeReaders++;
-
-                    // Post the SetResult on the preserved synchronization context
-                    item.Context.Post(s => item.TCS.SetResult(s), null);
                 }
             }
         }
