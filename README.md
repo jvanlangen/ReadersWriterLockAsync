@@ -13,9 +13,9 @@ ReadersWriterLockAsync solves the problem for using multiple readers and a singl
 Write("Before calling UseReaderAsync");
 var result = _readersWriterLock.UseReaderAsync(async () =>
 {
-    Write("Reader 1 start");
+    Write("Reader start");
     await Task.Delay(1000);
-    Write("Reader 1 end");
+    Write("Reader end");
 });
 Write("After calling UseReaderAsync");
 
@@ -43,9 +43,9 @@ else
 Write("Before calling UseReaderAsync");
 var result = _readersWriterLock.UseReaderAsync(() =>
 {
-    Write("Reader 1 start");
+    Write("Reader start");
     // await Task.Delay(1000);
-    Write("Reader 1 end");
+    Write("Reader end");
 });
 Write("After calling UseReaderAsync");
 
