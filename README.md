@@ -80,8 +80,8 @@ Let's add two readers and then two writers. The expected behavior should be:
 3) writer D
 
 ```csharp
-// Setup a list and add some readers and writers.
-var allValueTasks = new List<ValueTask>
+// Initialize an array with some readers and writers.
+var allValueTasks = new[]
 {
     // the first reader will run directly
     _readersWriterLock.UseReaderAsync(async () =>
