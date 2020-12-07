@@ -11,80 +11,118 @@ namespace VanLangen.Locking
 {
     public sealed class AsyncReadersWriterLock
     {
+        private static readonly SynchronizationContext _defaultContext = new SynchronizationContext();
         private readonly List<ExecuteInfo> _readersWritersQueue = new List<ExecuteInfo>();
         private int _activeReaders;
         private bool _writerActive;
-        private static readonly SynchronizationContext _defaultContext = new SynchronizationContext();
 
         /// <summary>
-        /// Execute the async code within a reader lock
+        /// Execute async code within a reader lock. 
+        /// This overload is used when you want to execute async code in a reader lock without returning a value.
         /// </summary>
-        /// <param name="asyncAction"></param>
-        /// <returns>Task which can be awaited</returns>
-        public ValueTask<T> UseReaderAsync<T>(Func<ValueTask<T>> asyncAction) =>
+        /// <param name="asyncAction">The action to be executed</param>
+        /// <returns>A ValueTask that should be checked if it is completed</returns>
+        public ValueTask UseReaderAsync(Func<ValueTask> asyncAction) =>
             ExecuteWithinLockAsync(false, asyncAction);
 
         /// <summary>
-        /// Execute the code within a reader lock
+        /// Execute async code within a reader lock. 
+        /// This overload is used when you want to execute async code in a reader lock which returns a value.
         /// </summary>
-        /// <param name="asyncAction"></param>
-        /// <returns>Task which can be awaited</returns>
-        public ValueTask<T> UseReaderAsync<T>(Func<T> asyncAction) =>
-            ExecuteWithinLockAsync(false, () => ValueTask.FromResult<T>(asyncAction()));
+        /// <param name="asyncFunc">The function to be executed</param>
+        /// <returns>A ValueTask that should be checked if it is completed</returns>
+        public ValueTask<T> UseReaderAsync<T>(Func<ValueTask<T>> asyncFunc) =>
+            ExecuteWithinLockAsync(false, asyncFunc);
+
+        /// <summary>
+        /// Execute code within a reader lock. 
+        /// This overload is used when you want to execute non-async code in a reader lock which returns a value.
+        /// </summary>
+        /// <param name="func">The function to be executed</param>
+        /// <returns>A ValueTask that should be checked if it is completed</returns>
+        public ValueTask<T> UseReaderAsync<T>(Func<T> func) =>
+            ExecuteWithinLockAsync(false, () => ValueTask.FromResult<T>(func()));
 
 
         /// <summary>
-        /// Execute the code within a reader lock
+        /// Execute code within a reader lock. 
+        /// This overload is used when you want to execute non-async code in a reader lock.
         /// </summary>
-        /// <param name="asyncAction"></param>
-        /// <returns>Task which can be awaited</returns>
-        public async ValueTask UseReaderAsync(Action asyncAction)
-        {
-            var result = ExecuteWithinLockAsync<object>(false, () =>
+        /// <param name="func">The action to be executed</param>
+        /// <returns>A ValueTask that should be checked if it is completed</returns>
+        public ValueTask UseReaderAsync(Action action) =>
+             ExecuteWithinLockAsync(false, () =>
              {
-                 asyncAction();
-                 return new ValueTask<object>();
+                 action();
+                 return ValueTask.CompletedTask;
              });
 
-            if (!result.IsCompleted)
-                await result;
-        }
-
 
         /// <summary>
-        /// Execute the async code within a writer lock
+        /// Execute async code within a writer lock. 
+        /// This overload is used when you want to execute async code in a writer lock without returning a value.
         /// </summary>
-        /// <param name="asyncAction"></param>
-        /// <returns></returns>
-        public ValueTask<T> UseWriterAsync<T>(Func<ValueTask<T>> asyncAction) =>
+        /// <param name="asyncAction">The action to be executed</param>
+        /// <returns>A ValueTask that should be checked if it is completed</returns>
+        public ValueTask UseWriterAsync<T>(Func<ValueTask> asyncAction) =>
             ExecuteWithinLockAsync(true, asyncAction);
 
         /// <summary>
-        /// Execute this code within a writer lock
+        /// Execute async code within a writer lock. 
+        /// This overload is used when you want to execute async code in a writer lock which returns a value.
         /// </summary>
-        /// <param name="asyncAction"></param>
-        /// <returns></returns>
-        public ValueTask<T> UseWriterAsync<T>(Func<T> asyncAction) =>
-            ExecuteWithinLockAsync(true, () => ValueTask.FromResult<T>(asyncAction()));
+        /// <param name="asyncFunc">The function to be executed</param>
+        /// <returns>A ValueTask that should be checked if it is completed</returns>
+        public ValueTask<T> UseWriterAsync<T>(Func<ValueTask<T>> asyncFunc) =>
+            ExecuteWithinLockAsync(true, asyncFunc);
 
         /// <summary>
-        /// Execute this code within a writer lock
+        /// Execute code within a writer lock. 
+        /// This overload is used when you want to execute non-async code in a writer lock which returns a value.
         /// </summary>
-        /// <param name="asyncAction"></param>
-        /// <returns></returns>
-        public async ValueTask UseWriterAsync(Action asyncAction)
-        {
-            var result = ExecuteWithinLockAsync<object>(true, () =>
+        /// <param name="func">The function to be executed</param>
+        /// <returns>A ValueTask that should be checked if it is completed</returns>
+        public ValueTask<T> UseWriterAsync<T>(Func<T> func) =>
+            ExecuteWithinLockAsync(true, () => ValueTask.FromResult<T>(func()));
+
+        /// <summary>
+        /// Execute code within a writer lock. 
+        /// This overload is used when you want to execute non-async code in a writer lock.
+        /// </summary>
+        /// <param name="action">The action to be executed</param>
+        /// <returns>A ValueTask that should be checked if it is completed</returns>
+        public ValueTask UseWriterAsync(Action action) =>
+            ExecuteWithinLockAsync(true, () =>
             {
-                asyncAction();
-                return new ValueTask<object>();
+                action();
+                return ValueTask.CompletedTask;
             });
 
-            if (!result.IsCompleted)
-                await result;
+
+        private TaskCompletionSource<object> CreateTaskCompletionSourceWhenQueued(bool isWriterLock)
+        {
+            // If there is a write active || if there are readers active and the requested is a writer ||
+            // anything is in the queue => Queue it
+            //
+            // Which means:
+            // - Queue readers when a writer is active or when anything is queued.
+            // - Queue writers when another writer is active, any readerlocks are active
+            //   or when anything is queued.
+            //
+            if ((isWriterLock && (_activeReaders > 0)) || _writerActive || _readersWritersQueue.Count > 0)
+            {
+                // queue it and await it some below until it is triggered by a current held lock routine
+                var tcs = new TaskCompletionSource<object>();
+                // add to the queue and preserve the synchronization context, if non use the default (threadpool)
+                _readersWritersQueue.Add(new ExecuteInfo(isWriterLock, tcs, SynchronizationContext.Current ?? _defaultContext));
+
+                return tcs;
+            }
+            else
+                return default;
         }
 
-        private async ValueTask<T> ExecuteWithinLockAsync<T>(bool isWriterLock, Func<ValueTask<T>> asyncAction)
+        private async ValueTask<T> ExecuteWithinLockAsync<T>(bool isWriterLock, Func<ValueTask<T>> asyncFunc)
         {
             TaskCompletionSource<object> tcs = default;
 
@@ -93,36 +131,25 @@ namespace VanLangen.Locking
             // this asyncAction will be queued.
             lock (_readersWritersQueue)
             {
-                // If there is a write active || if there are readers active and the requested is a writer ||
-                // anything is in the queue => Queue it
-                //
-                // Which means:
-                // - Queue readers when a writer is active or when anything is queued.
-                // - Queue writers when another writer is active, any readerlocks are active
-                //   or when anything is queued.
-                //
-                if ((isWriterLock && (_activeReaders > 0)) || _writerActive || _readersWritersQueue.Count > 0)
-                {
-                    // queue it and await it some below until it is triggered by a current held lock routine
-                    tcs = new TaskCompletionSource<object>();
-                    // add to the queue and preserve the synchronization context, if non use the default (threadpool)
-                    _readersWritersQueue.Add(new ExecuteInfo(isWriterLock, tcs, SynchronizationContext.Current ?? _defaultContext));
-                }
-                // we can execute directly, so take the lock (either reader/writer)
-                else if (isWriterLock)
-                    _writerActive = true;
-                else
-                    _activeReaders++;
+                // check if the function can be executed directly.
+                tcs = CreateTaskCompletionSourceWhenQueued(isWriterLock);
+
+                // we can execute directly (tcs is not assigned), so take the lock (either reader/writer)
+                if (tcs == default)
+                    if (isWriterLock)
+                        _writerActive = true;
+                    else
+                        _activeReaders++;
             }
 
-            // if the tcs is assigned, means that it was queued, wait here
+            // if the tcs is assigned, means that it was queued, wait here (outside the lock)
             if (tcs != default)
                 await tcs.Task;
 
             try
             {
                 // execute the function
-                var result = asyncAction();
+                var result = asyncFunc();
 
                 // if it isn't completed (by using async code) await it here.
                 if (!result.IsCompleted)
@@ -141,14 +168,64 @@ namespace VanLangen.Locking
                     else
                         _activeReaders--;
 
-                    ContinueWaitingTasks();
+                    CheckWaitingTasksOnQueue();
                 }
             }
         }
 
-        private void ContinueWaitingTasks()
+        private async ValueTask ExecuteWithinLockAsync(bool isWriterLock, Func<ValueTask> asyncAction)
         {
-            // this lock is ready, now check the queue for waiting locks
+            TaskCompletionSource<object> tcs = default;
+
+            // lets check if any lock is held (this lock may run parallel)
+            // if, for example, this is a writerlock and there is already a readerlock active,
+            // this asyncAction will be queued.
+            lock (_readersWritersQueue)
+            {
+                // check if the function can be executed directly.
+                tcs = CreateTaskCompletionSourceWhenQueued(isWriterLock);
+
+                // we can execute directly (tcs is not assigned), so take the lock (either reader/writer)
+                if (tcs == default)
+                    if (isWriterLock)
+                        _writerActive = true;
+                    else
+                        _activeReaders++;
+            }
+
+            // if the tcs is assigned, means that it was queued, wait here
+            if (tcs != default)
+                await tcs.Task;
+
+            try
+            {
+                // execute the function
+                var result = asyncAction();
+
+                // if it isn't completed (by using async code) await it here.
+                if (!result.IsCompleted)
+                    await result;
+
+            }
+            finally
+            {
+                // lock the queue again and check if any locks need to be triggered.
+                lock (_readersWritersQueue)
+                {
+                    // we first need to disable this lock, because we were ready with the operation.
+                    if (isWriterLock)
+                        _writerActive = false;
+                    else
+                        _activeReaders--;
+
+                    CheckWaitingTasksOnQueue();
+                }
+            }
+        }
+
+        private void CheckWaitingTasksOnQueue()
+        {
+            // check the queue for waiting locks
             while (true)
             {
                 // get the first item

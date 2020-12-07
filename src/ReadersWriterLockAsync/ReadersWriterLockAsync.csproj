@@ -8,14 +8,14 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/jvanlangen/ReadersWriterLockAsync</RepositoryUrl>
-    <PackageTags>ReadersWriterLock;Async;ReaderWriter;ReadersWriter;Locking;lock</PackageTags>
+    <PackageTags>VanLangen;ReadersWriterLockAsync;ReaderWriterLockAsync;Async;ReadersWriterLock;ReaderWriterLock;ReaderWriter;ReadersWriter;lock;Locking</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RootNamespace>VanLangen.Locking</RootNamespace>
     <AssemblyName>VanLangen.Locking.ReadersWriterLockAsync</AssemblyName>
     <Company>vanlangen.biz</Company>
-    <FileVersion>1.0.6.0</FileVersion>
-    <AssemblyVersion>1.0.6.0</AssemblyVersion>
-    <Version>1.0.6</Version>
+    <FileVersion>1.0.9.0</FileVersion>
+    <AssemblyVersion>1.0.9.0</AssemblyVersion>
+    <Version>1.0.9</Version>
   </PropertyGroup>
 
   <ItemGroup>
