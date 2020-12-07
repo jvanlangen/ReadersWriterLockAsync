@@ -1,7 +1,8 @@
 # ReadersWriterLockAsync
-ReadersWriterLockAsync solves the thread affinity problem for using multiple readers and a single writer lock using async code.
+ReadersWriterLockAsync solves the thread affinity problem for using multiple readers and a single writer lock using async code. It supports SynchronizationContexts. (usefull when developing UI applications)
 
-**This version is not released yet i'm still working on some tests**
+
+**I'm still working on some tests**  (for thoughts, send them)
 
 # Examples:
 
@@ -70,7 +71,7 @@ Output:
       46,666 ms | result.IsCompleted == true
 ```
 
-Here no await is used and the method completes directly. No await is needed, which speeds-up the system.
+Await isn't used in the UseReaderAsync argument action, so the method completes directly. The execution is some faster when await isn't called.
 
 ## Some readers and writers
 
