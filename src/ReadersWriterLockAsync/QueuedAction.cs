@@ -9,13 +9,13 @@ namespace VanLangen.Locking
     /// <summary>
     /// Struct to tie the lock type and the TaskCompletionSource, to trigger the awaited lock task
     /// </summary>
-    internal class ExecuteInfo
+    internal class QueuedAction
     {
-        public readonly bool IsWriterLock;
-        public readonly TaskCompletionSource<object> TCS;
-        public readonly SynchronizationContext Context;
+        public bool IsWriterLock { get; }
+        public TaskCompletionSource<object> TCS { get; }
+        public SynchronizationContext Context { get; }
 
-        public ExecuteInfo(bool isWriterLock, TaskCompletionSource<object> tcs, SynchronizationContext context)
+        public QueuedAction(bool isWriterLock, TaskCompletionSource<object> tcs, SynchronizationContext context)
         {
             IsWriterLock = isWriterLock;
             TCS = tcs;
